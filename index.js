@@ -4,7 +4,7 @@ const channel = new BroadcastChannel('math_render_channel');
 channel.onmessage = function ({ data }) { setRender(data); }
 
 $('#rawLatex').keypress(function({ originalEvent }){
-  if (originalEvent && originalEvent.ctrlKey && originalEvent.keyCode === 13) {
+  if (originalEvent && originalEvent.ctrlKey && (originalEvent.keyCode === 13 || originalEvent.keyCode === 10)) {
     const text = $('#rawLatex').val();
     console.log(text);
     channel.postMessage(text);
