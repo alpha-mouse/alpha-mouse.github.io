@@ -1,4 +1,7 @@
-$('.tabular.menu .item').tab();
+$('.tabular.menu a.item').tab();
+
+let latestText = '';
+let typesettingPromise = Promise.resolve();
 
 const channel = new BroadcastChannel('math_render_channel');
 channel.onmessage = function ({ data }) { setRender(data); }
@@ -7,43 +10,32 @@ $('#rawLatex').keyup(function({ originalEvent }){
 //$('#rawLatex').keypress(function({ originalEvent }){
 //  if (originalEvent && originalEvent.ctrlKey && (originalEvent.keyCode === 13 || originalEvent.keyCode === 10)) {
     const text = $('#rawLatex').val();
-    console.log(text);
+    //console.log(text);
     channel.postMessage(text);
-    setRender(text);
+    if ($("#ownRender").prop('checked'))
+        setRender(text);
 //  }
 });
 
 function setRender(text) {
-  $('#renderedLatex').text(text);
-  MathJax.typeset();
+  latestText = text;
+  typeset(text);
 }
 
-/*
-function readTextFile(file) {
-    var rawFile = new XMLHttpRequest();
-    rawFile.open("GET", file, false);
-    rawFile.onreadystatechange = function ()
-    {
-        if(rawFile.readyState === 4)
-        {
-            if(rawFile.status === 200 || rawFile.status == 0)
-            {
-                var allText = rawFile.responseText;
-                console.log(allText);
-                setRender(allText);
+function typeset(text) {
+    typesettingPromise = typesettingPromise
+        .then(() => {
+            if (latestText === text) {
+                $('#renderedLatex').text(text);
+                return MathJax.typesetPromise()
             }
-        }
-    }
-    rawFile.send(null);
+            else
+                return Promise.resolve()
+        })
+        .catch((err) => console.log('Typeset failed: ' + err.message));
 }
-readTextFile("template.tex");
-*/
-
-// var template = new FileReader();
-// template.onload = function(){ getElementById("rawLatex").innterText = reader.result; };
-// template.readAsText("template.tex");
 
  $.ajax({url: "template.tex", success: function(text) {
-    console.log(text);
      $("#rawLatex").val(text);
+     setRender(text);
     }});
