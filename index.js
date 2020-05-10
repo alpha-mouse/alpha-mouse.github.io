@@ -1,33 +1,39 @@
 $('.tabular.menu a.item').tab();
 
-let latestText = '';
 let typesettingPromise = Promise.resolve();
 
+const paragraphs = [];
 const channel = new BroadcastChannel('math_render_channel');
 channel.onmessage = function ({ data }) { setRender(data); }
 
 $('#rawLatex').keyup(function({ originalEvent }){
-//$('#rawLatex').keypress(function({ originalEvent }){
-//  if (originalEvent && originalEvent.ctrlKey && (originalEvent.keyCode === 13 || originalEvent.keyCode === 10)) {
     const text = $('#rawLatex').val();
-    //console.log(text);
     channel.postMessage(text);
     if ($("#ownRender").prop('checked'))
         setRender(text);
-//  }
 });
 
 function setRender(text) {
-  latestText = text;
-  typeset(text);
+  var paragraphTexts = text.split(/\r?\n\r?\n/g)
+  for (let i = 0; i < paragraphTexts.length; ++i) {
+    if (paragraphs.length <= i)
+      $('#paragraphs').append(`<div id="paragraph_${i}" style="width: 50%; white-space: pre;" />`)
+    const newText = paragraphTexts[i].trim();
+    const needsTypesetting = paragraphs[i] !== newText
+    paragraphs[i] = newText
+    if (needsTypesetting)
+      typeset(i, newText)
+  }
 }
 
-function typeset(text) {
+function typeset(i, text) {
     typesettingPromise = typesettingPromise
         .then(() => {
-            if (latestText === text) {
-                $('#renderedLatex').text(text);
-                return MathJax.typesetPromise()
+            if (paragraphs[i] === text) {
+                //console.log('typesetting', i, text)
+                var paragraph = $(`#paragraph_${i}`)
+                paragraph.text(text)
+                return MathJax.typesetPromise(paragraph)
             }
             else
                 return Promise.resolve()
