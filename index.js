@@ -15,6 +15,12 @@ $('#rawLatex').keyup(function({ originalEvent }){
 
 function setRender(text) {
   var paragraphTexts = text.split(/\r?\n\r?\n/g)
+  // kill off excess paragraphs
+  for (let i = paragraphs.length - 1; paragraphTexts.length <= i ; --i) {
+    $(`#paragraph_${i}`).remove()
+    paragraphs.pop()
+  }
+  // update and add
   for (let i = 0; i < paragraphTexts.length; ++i) {
     if (paragraphs.length <= i)
       $('#paragraphs').append(`<div id="paragraph_${i}" style="width: 50%; white-space: pre;" />`)
@@ -24,6 +30,7 @@ function setRender(text) {
     if (needsTypesetting)
       typeset(i, newText)
   }
+
 }
 
 function typeset(i, text) {
