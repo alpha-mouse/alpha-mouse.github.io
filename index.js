@@ -33,6 +33,7 @@ function typeset(i, text) {
                 //console.log('typesetting', i, text)
                 var paragraph = $(`#paragraph_${i}`)
                 paragraph.text(text)
+                paragraph[0].scrollIntoView()
                 return MathJax.typesetPromise(paragraph)
             }
             else
