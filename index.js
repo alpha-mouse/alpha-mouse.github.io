@@ -23,7 +23,7 @@ function setRender(text) {
   // update and add
   for (let i = 0; i < paragraphTexts.length; ++i) {
     if (paragraphs.length <= i)
-      $('#paragraphs').append(`<div id="paragraph_${i}" style="width: 50%; white-space: pre;" />`)
+      $('#paragraphs').append(`<div id="paragraph_${i}" style="width: 50%; white-space: pre;` + (i == 0 ? "height: 100em; " : "" ) + `" />`)
     const newText = paragraphTexts[i].trim();
     const needsTypesetting = paragraphs[i] !== newText
     paragraphs[i] = newText
