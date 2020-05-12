@@ -2,37 +2,108 @@ $('.tabular.menu a.item').tab();
 
 let typesettingPromise = Promise.resolve();
 
+const hello = "Hello";
+const hi = "Hi!";
+const emph = "Emphasize";
+const orange = "\\color{orange}";
+const black = "\\color{black}";
+const textCmd = "\\text{"
+
 const paragraphs = [];
-const channel = new BroadcastChannel('math_render_channel');
-const channelGuid = 'ba880a8b-6df5-4c34-a2ea-3bcc6e28aaf2';
+const textChannel = new BroadcastChannel('math_render_text_channel');
+const serviceChannel = new BroadcastChannel('math_render_service_channel');
 transmitter = true;
 
-channel.onmessage = function ({ data }) { setRender(data); }
+textChannel.onmessage = function ({ data }) { setRender(data); }
+serviceChannel.onmessage = function ({ data }) { serviceMessage(data); }
 
-channel.postMessage(channelGuid);
+serviceChannel.postMessage(hello);
 
 $('#rawLatex').keyup(function({ originalEvent }){
-    const text = $('#rawLatex').val();
-    channel.postMessage(text);
+    text = $('#rawLatex').val();
+    if (originalEvent.key == "F8") {
+        start = $('#rawLatex').prop("selectionStart");
+        finish = $('#rawLatex').prop("selectionEnd");
+
+        if (start != finish)
+            text = text.substring(0, start) + orange + text.substring(start, finish) + black + text.substring(finish);
+        else
+        {
+            paragraphBegin = text.lastIndexOf("\n\n", start - 1);
+
+            if (paragraphBegin < 0)
+                paragraphBegin = 0;
+            else
+                paragraphBegin += 2;
+
+            paragraphEnd = text.indexOf("\n\n", finish);
+
+            if (paragraphEnd < 0)
+                paragraphEnd = text.length;
+
+            newText = text.substring(0, paragraphBegin);
+            j = paragraphBegin;
+
+            for (var i = paragraphBegin; i < paragraphEnd; )
+                if (text.substr(i, 2) == "\\[") {
+                    newText += "$" + orange + textCmd + text.substring(j, i) + "}$";
+                    j = i;
+                    i += 2;
+                    newText += text.substring(j, i) + orange;
+                    j = i;
+                    i = text.indexOf("\\]", i) + 2;
+                    newText += text.substring(j, i);
+                    j = i;
+                }
+                else if (text.substr(i, 2) == "$$") {
+                    newText += "$" + orange + textCmd + text.substring(j, i) + "}$";
+                    j = i;
+                    i += 2;
+                    newText += text.substring(j, i) + orange;
+                    j = i;
+                    i = text.indexOf("$$", i) + 2;
+                    newText += text.substring(j, i);
+                    j = i;
+                }
+                else if (text.charAt(i) == "$") {
+                    newText += "$" + orange + textCmd + text.substring(j, i) + "}";
+                    i++;
+                    j = i;
+                    i = text.indexOf("$", i) + 1;
+                    newText += text.substring(j, i);
+                    j = i;
+                }
+                else
+                    i++;
+
+            newText += "$" + orange + textCmd + text.substring(j, paragraphEnd) + "}$";
+            newText += text.substring(paragraphEnd);
+            text = newText;
+        }
+    }
+
+    textChannel.postMessage(text);
     if ($("#ownRender").prop('checked'))
         setRender(text);
 });
 
-function setRender(text) {
-  console.info(text);
+function serviceMessage(text) {
+  parts = text.split(/ /g);
 
-  if (text == channelGuid) {
+  if (text == hello) {
     if (transmitter)
-        channel.postMessage(channelGuid + channelGuid);
+        serviceChannel.postMessage(hi);
     return;
   }
 
-  if (text == channelGuid + channelGuid) {
+  if (text == hi) {
     transmitter = false;
-    document.getElementsByTagName("a")[0].click();
+    document.getElementById("render").click();
     return;
   }
+}
 
+function setRender(text) {
   var paragraphTexts = text.split(/\r?\n\r?\n/g)
   // kill off excess paragraphs
   for (let i = paragraphs.length - 1; paragraphTexts.length <= i ; --i) {
